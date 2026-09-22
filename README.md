@@ -1,4 +1,4 @@
-INFORMATION
+INFORMACIÓN
 ----------------------
 
 Pajitaraptor 2.0 es un robot siguelineas evolución de Pajitaraptor. La idea es hacer un robot siguelineas lo más rápido posible con los componentes que tengo actualmente.
