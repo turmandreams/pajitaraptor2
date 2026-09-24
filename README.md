@@ -26,6 +26,8 @@ PAJITARAPTOR 2.0 VIDEOS
 
 [![Alt text](https://img.youtube.com/vi/2WoTrkFVUT8/0.jpg)](https://www.youtube.com/shorts/2WoTrkFVUT8)) 
 
+[![Alt text](https://img.youtube.com/vi/3bNs3Pc4z7s/0.jpg)](https://www.youtube.com/shorts/3bNs3Pc4z7s)) 
+
 
 
 
