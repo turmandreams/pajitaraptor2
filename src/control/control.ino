@@ -26,6 +26,22 @@ const int canalMotorA = 0;
 const int canalMotorB = 1;
 
 
+// ---------- Rangos máximos de cada constante ----------
+// Kp: con error 750 y Kp=0.5 -> corrección 375 (satura sobrada)
+const float KP_MAX = 0.5;
+const float KI_MAX = 0.005;
+const float KD_MAX = 5.0;
+
+// ---------- Parámetros del robot ----------
+int   VEL_BASE = 150;      // velocidad en recta (0..255)
+const float INTEGRAL_MAX = 20000; // anti-windup
+
+float Kp = 0, Ki = 0, Kd = 0;
+float integral = 0;
+float errorAnterior = 0;
+unsigned long tAnterior = 0;
+unsigned long tPots = 0;
+
 const int canalSuccion = 2;
 
 const int pinBateria = 36; 
@@ -45,7 +61,6 @@ int contador=-1;
 int tiempo=0;
 
 int succion = 0;
-int velocidad = 0;
 int p_pid = 0;
 int i_pid = 0; 
 int d_pid = 0;
@@ -54,12 +69,7 @@ int tiemposensores=0;
 
 boolean corre=false;
 
-//PD
 
-float Kp,Kd;   
-float p,d;
-float pid;
-float error_anterior;
 
 
 void medirbateria(){
@@ -108,46 +118,26 @@ void leepotenciometros(){
     }
 
     succion = sumS / 100;
-    velocidad = sumV / 100;
+    VEL_BASE = sumV / 100;
     p_pid = sumP / 100;
     i_pid = sumI / 100;
     d_pid = sumD / 100;
 
 
-    Kp=((float)p_pid)/100.0;    
-    Kd=((float)d_pid);
+    Kp = p_pid / 255.0 * KP_MAX;
+    Ki = i_pid / 255.0 * KI_MAX;
+    Kd = d_pid / 255.0 * KD_MAX;
 
-    /*
+    
     // Mostrar resultados en el Monitor Serie
     Serial.print("Succion : "); Serial.println(succion);
-    Serial.print("Velocidad : "); Serial.println(velocidad);
+    Serial.print("Velocidad Base: "); Serial.println(VEL_BASE);
     Serial.print("P : "); Serial.println(p_pid);
     Serial.print("I : "); Serial.println(i_pid);
     Serial.print("D : "); Serial.println(d_pid);
     Serial.println("");
-    */
-
-    int pidmax=velocidad;
-
-     pid = constrain(pid,-pidmax,pidmax);
     
-    if(abs(posicion)>=550){
-      if(posicion<0){
-        pwm(0,0);pwm(1,vlin);
-        pwm(3,0);pwm(2,vlin/16);
-      }else{
-        pwm(1,0);pwm(0,vlin/16);
-        pwm(2,0);pwm(3,vlin);
-      }
-      
-    }else{  
-      
-      pwm(0,0);pwm(1,vlin-pid);
-      pwm(2,0);pwm(3,vlin+pid);
-      
-    }
-
-  
+    
     //ponemos el pwm en el ventilador de succion
     if(succion<20){ succion=0;}
     succion=succion/5;
@@ -156,24 +146,42 @@ void leepotenciometros(){
     
 }
 
+// velocidad: -255..255 (negativo = marcha atrás)
+void motor(int canal, int in1, int in2, int velocidad) {
+  velocidad = constrain(velocidad, -255, 255);
+  if (velocidad >= 0) {
+    digitalWrite(in1, HIGH);
+    digitalWrite(in2, LOW);
+  } else {
+    digitalWrite(in1, LOW);
+    digitalWrite(in2, HIGH);
+  }
+  ledcWrite(canal,abs(velocidad));
+}
 
 void pidmotores(float error){
 
-    p=error;  
-    d = error-error_anterior;
-    error_anterior = error;
-    
+  unsigned long ahora = micros();
+  float dt = (ahora - tAnterior) / 1000.0;   // en milisegundos
+  tAnterior = ahora;
+  if (dt <= 0) dt = 1;
 
-    ledcWrite(canalMotorA,velocidad); 
-    ledcWrite(canalMotorB,velocidad); 
 
-    //Hacia delante
-    digitalWrite(pinAIN1, LOW);
-    digitalWrite(pinAIN2, HIGH);
-    
-    digitalWrite(pinBIN2, LOW);
-    digitalWrite(pinBIN1, HIGH);
-    espera(2000); 
+  // --- PID ---
+  integral += error * dt;
+  integral = constrain(integral, -INTEGRAL_MAX, INTEGRAL_MAX);
+
+  float derivada = (error - errorAnterior) / dt;
+  errorAnterior = error;
+
+  float correccion = Kp * error + Ki * integral + Kd * derivada;
+
+  // --- Aplicar a motores ---
+  int velIzq = VEL_BASE + correccion;
+  int velDer = VEL_BASE - correccion;
+
+  motor(canalMotorA,pinAIN2,pinAIN1, velIzq);
+  motor(canalMotorB,pinBIN1,pinBIN2, velDer);
     
 }
 
@@ -199,6 +207,7 @@ void receiveEvent(int bytesCount) {
 
     tiemposensores=millis();
 
+/*
     contador++;
 
     //Serial.println(receivedFloat, 2);
@@ -211,6 +220,7 @@ void receiveEvent(int bytesCount) {
         Serial.print("Posicion : ");
         Serial.println(receivedFloat, 2);
     }
+*/
     
   } else {
     // Si llegan bytes extras, vaciamos el bus
@@ -274,10 +284,7 @@ void setup() {
 
 void loop() {
 
-  leepotenciometros();
-  medirbateria();
-
-/*
+  /*
   if(corre){
 
     ledcWrite(canalMotorA, velocidad); 
@@ -292,13 +299,15 @@ void loop() {
 
   }
 */
-
+  espera(2);
+  
   if(!corre){
+
+    leepotenciometros();
+    medirbateria();
     
-    digitalWrite(pinAIN1, LOW);
-    digitalWrite(pinAIN2, LOW);
-    digitalWrite(pinBIN2, LOW);
-    digitalWrite(pinBIN1, LOW);
+    motor(canalMotorA,pinAIN2,pinAIN1,0);
+    motor(canalMotorB,pinBIN1,pinBIN2,0);
     espera(100); 
     
   }
