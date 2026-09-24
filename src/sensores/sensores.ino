@@ -25,6 +25,10 @@ boolean funcionando=false;
 
 int tiempo=0;
 
+int tiempoparpadeo=0;
+boolean ledparpadeo=false;
+
+
 void leesensores(){
     
     float sensores[16];
@@ -87,10 +91,7 @@ void setup() {
 
   pinMode(pinled,OUTPUT);
 
-  digitalWrite(pinled,HIGH);delay(200);
-  digitalWrite(pinled,LOW);delay(200);
-  digitalWrite(pinled,HIGH);delay(200);
-  digitalWrite(pinled,LOW);delay(200);
+
     
 }
 
@@ -120,6 +121,18 @@ void loop() {
       Wire.endTransmission();
 
       //delay(1);
+      
+  }else{
+
+      if((millis()-tiempoparpadeo)>1000) {
+
+          ledparpadeo=!ledparpadeo;
+          digitalWrite(pinled,ledparpadeo);
+          tiempoparpadeo=millis();
+        
+      }
+
+    
   }
   
 }
