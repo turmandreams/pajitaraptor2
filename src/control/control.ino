@@ -142,7 +142,7 @@ void leepotenciometros(){
     if(succion<20){ succion=0;}
     succion=succion/5;
     
-    ledcWrite(canalSuccion,succion);
+    
     
 }
 
@@ -182,6 +182,8 @@ void pidmotores(float error){
 
   motor(canalMotorA,pinAIN2,pinAIN1, velIzq);
   motor(canalMotorB,pinBIN1,pinBIN2, velDer);
+
+  ledcWrite(canalSuccion,succion);
     
 }
 
@@ -308,6 +310,7 @@ void loop() {
     
     motor(canalMotorA,pinAIN2,pinAIN1,0);
     motor(canalMotorB,pinBIN1,pinBIN2,0);
+    ledcWrite(canalSuccion,0);
     espera(100); 
     
   }
