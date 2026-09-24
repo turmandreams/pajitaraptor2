@@ -1,0 +1,15 @@
+ Detalles importantes
+
+Sentido de giro: si al poner solo Kp el robot se aleja de la línea en lugar de corregir, cambia el signo (velIzq = VEL_BASE - correccion, velDer = VEL_BASE + correccion). Lo mismo si un motor gira al revés: intercambia sus IN1/IN2.
+Pines ADC: usa pines de ADC1 (GPIO 32–39) para los potenciómetros. ADC2 deja de funcionar si activas WiFi o Bluetooth.
+Versión del core: ledcAttach(pin, freq, res) y ledcWrite(pin, duty) son de la versión 3.x. Si usas la 2.x, sería ledcSetup(canal, freq, res) + ledcAttachPin(pin, canal) y ledcWrite(canal, duty).
+Marcha atrás: permito velocidades negativas para que en curvas cerradas una rueda pueda frenar o invertir. Si no lo quieres, cambia el constrain a 0, 255.
+
+Cómo ajustarlo con los potenciómetros
+
+Pon Ki y Kd a cero. Sube Kp hasta que el robot siga la línea pero oscile.
+Sube Kd poco a poco hasta que desaparezcan las oscilaciones.  
+Ki normalmente se deja a cero o muy bajo en siguelíneas. Solo ayuda si el robot tiende a ir siempre desplazado hacia un lado.
+Cuando lo tengas estable, sube VEL_BASE y reajusta.
+
+Si ves que el potenciómetro de Kp o Kd se queda corto (o que todo el ajuste útil ocurre en una zona muy pequeña del giro), cambia KP_MAX o KD_MAX para ganar resolución donde la necesitas.
